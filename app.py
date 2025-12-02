@@ -93,4 +93,16 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
                 mean = create_audio(item['mean'], 'ko')
 
                 # 합치기
-                full_audio += eng + short_
+                full_audio += eng + short_silence + kor + short_silence + mean + silence
+                
+                # 화면 표시
+                st.markdown(f"""
+                ---
+                **{i+1}. {item['eng']}** 🗣️ *{item['kor_pron']}* 🇰🇷 {item['mean']}
+                """)
+
+            # 최종 재생
+            st.success("생성 완료! 아래 플레이어를 누르세요.")
+            buffer = io.BytesIO()
+            full_audio.export(buffer, format="mp3")
+            st.audio(buffer, format='audio/mp3')
