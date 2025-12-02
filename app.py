@@ -4,7 +4,6 @@ from gtts import gTTS
 from pydub import AudioSegment
 import io
 import json
-import random
 
 # 페이지 설정
 st.set_page_config(page_title="토익 리스닝 마스터", page_icon="🎧")
@@ -56,7 +55,7 @@ def create_audio(text, lang):
 
 def speed_change(sound, speed=1.0):
     """오디오 속도를 조절하는 함수입니다."""
-    # 프레임 속도를 조절하여 속도와 피치(음높이)를 같이 올림 -> 여자 목소리 유지에 도움됨
+    # 속도를 올리면서 피치도 살짝 올려서 쳐지는 느낌 방지
     sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
         "frame_rate": int(sound.frame_rate * speed)
     })
@@ -81,18 +80,21 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
                 # 진행률 표시
                 progress_bar.progress((i + 1) / 5)
                 
-                # 1. 영어 원문 (정상 속도)
+                # 1. 영어 원문 (정상)
                 eng = create_audio(item['eng'], 'en')
                 
-                # 2. 한국식 발음 (영어 텍스트를 한국어 성우가 읽음)
-                # [핵심] 여기서 속도를 1.2배 빠르게 조절!
-                raw_kor = create_audio(item['eng'], 'ko') 
+                # 2. 한국식 발음 (개선됨)
+                # 전략: 한글 텍스트를 쓰되, 물음표를 마침표로 바꿔 톤을 낮추고 속도를 올림
+                flat_pron = item['kor_pron'].replace("?", ".").replace("!", ".")
+                raw_kor = create_audio(flat_pron, 'ko') 
+                
+                # 속도 1.25배 (늘어짐 방지)
                 kor = speed_change(raw_kor, speed=1.25) 
                 
-                # 3. 한국어 뜻 (정상 속도)
+                # 3. 한국어 뜻 (정상)
                 mean = create_audio(item['mean'], 'ko')
 
-                # 합치기
+                # [오류 해결된 부분] 변수명을 정확하게 연결
                 full_audio += eng + short_silence + kor + short_silence + mean + silence
                 
                 # 화면 표시
