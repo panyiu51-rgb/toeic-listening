@@ -23,7 +23,7 @@ else:
 
 def get_toeic_sentences():
     """제미나이에게 토익 빈출 문장을 요청합니다."""
-    # 사용하시는 모델 (gemini-2.5-flash가 안되면 gemini-pro나 gemini-1.5-flash로 변경)
+    # 모델 설정 (gemini-2.5-flash 또는 gemini-pro 사용)
     model = genai.GenerativeModel('gemini-2.5-flash')
     
     prompt = """
@@ -54,6 +54,14 @@ def create_audio(text, lang):
     fp.seek(0)
     return AudioSegment.from_file(fp, format="mp3")
 
+def speed_change(sound, speed=1.0):
+    """오디오 속도를 조절하는 함수입니다."""
+    # 프레임 속도를 조절하여 속도와 피치(음높이)를 같이 올림 -> 여자 목소리 유지에 도움됨
+    sound_with_altered_frame_rate = sound._spawn(sound.raw_data, overrides={
+        "frame_rate": int(sound.frame_rate * speed)
+    })
+    return sound_with_altered_frame_rate.set_frame_rate(sound.frame_rate)
+
 # --- 3. 화면 구성 및 실행 ---
 
 if st.button("▶️ 공부 시작 (자동 생성)"):
@@ -73,26 +81,16 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
                 # 진행률 표시
                 progress_bar.progress((i + 1) / 5)
                 
-                # 오디오 생성
-                eng = create_audio(item['eng'], 'en')     # 영어
+                # 1. 영어 원문 (정상 속도)
+                eng = create_audio(item['eng'], 'en')
                 
-                # [핵심 수정] 영어 텍스트를 한국어 성우가 읽게 해서 '콩글리시' 톤 구현
-                kor = create_audio(item['eng'], 'ko') 
+                # 2. 한국식 발음 (영어 텍스트를 한국어 성우가 읽음)
+                # [핵심] 여기서 속도를 1.2배 빠르게 조절!
+                raw_kor = create_audio(item['eng'], 'ko') 
+                kor = speed_change(raw_kor, speed=1.25) 
                 
-                mean = create_audio(item['mean'], 'ko')    # 뜻
+                # 3. 한국어 뜻 (정상 속도)
+                mean = create_audio(item['mean'], 'ko')
 
-                # 합치기: 영어 -> (쉼) -> 한국식 -> (쉼) -> 뜻 -> (김 쉼)
-                full_audio += eng + short_silence + kor + short_silence + mean + silence
-                
-                # 화면에 텍스트 보여주기
-                st.markdown(f"""
-                ---
-                **{i+1}. {item['eng']}** 🗣️ *{item['kor_pron']}* 🇰🇷 {item['mean']}
-                """)
-
-            # 최종 재생
-            st.success("생성 완료! 아래 플레이어를 누르세요.")
-            buffer = io.BytesIO()
-            full_audio.export(buffer, format="mp3")
-
-            st.audio(buffer, format='audio/mp3')
+                # 합치기
+                full_audio += eng + short_
