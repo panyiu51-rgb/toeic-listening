@@ -24,7 +24,7 @@ else:
 
 def get_toeic_sentences():
     """제미나이에게 토익 빈출 문장을 요청합니다."""
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     
     # 토익 파트 1(사진묘사), 파트 2(질의응답) 스타일 요청
     prompt = """
@@ -92,4 +92,5 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
             st.success("생성 완료! 아래 플레이어를 누르세요.")
             buffer = io.BytesIO()
             full_audio.export(buffer, format="mp3")
+
             st.audio(buffer, format='audio/mp3')
