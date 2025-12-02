@@ -71,9 +71,9 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
         if data:
             full_audio = AudioSegment.empty()
             
-            # [수정됨] 간격을 더 길게 설정
-            short_silence = AudioSegment.silent(duration=1500) # (1.5초) 영어 듣고 따라할 시간 확보
-            long_silence = AudioSegment.silent(duration=2500)  # (2.5초) 한 세트 끝나고 쉬는 시간
+            # 간격 설정
+            short_silence = AudioSegment.silent(duration=1500) # (1.5초) 듣고 따라할 시간
+            long_silence = AudioSegment.silent(duration=2500)  # (2.5초) 다음 문장 넘어가기 전
 
             progress_bar = st.progress(0)
             
@@ -81,21 +81,25 @@ if st.button("▶️ 공부 시작 (자동 생성)"):
                 # 진행률 표시
                 progress_bar.progress((i + 1) / 5)
                 
-                # 1. 영어 원문
+                # 1. 영어 원문 (정상 속도)
                 eng = create_audio(item['eng'], 'en')
                 
-                # 2. 한국식 발음 (속도 1.25배로 톤 보정)
+                # 2. 한국식 발음 (속도 1.25배 + 톤 평탄화)
                 flat_pron = item['kor_pron'].replace("?", ".").replace("!", ".")
                 raw_kor = create_audio(flat_pron, 'ko') 
                 kor = speed_change(raw_kor, speed=1.25) 
                 
-                # 3. 한국어 뜻
-                mean = create_audio(item['mean'], 'ko')
+                # 3. 한국어 뜻 (여기를 수정했습니다!)
+                # [수정] 물음표 제거하여 톤을 낮춤 ("검토해 주시겠어요?" -> "검토해 주시겠어요.")
+                flat_mean = item['mean'].replace("?", ".").replace("!", ".")
+                raw_mean = create_audio(flat_mean, 'ko')
+                # [수정] 속도를 1.2배로 올려서 늘어지는 느낌 제거
+                mean = speed_change(raw_mean, speed=1.2)
 
-                # [한 세트 만들기] 영어 -> (1.5초) -> 발음 -> (1.5초) -> 뜻 -> (2.5초)
+                # 한 세트 만들기: 영어 -> (1.5초) -> 발음 -> (1.5초) -> 뜻 -> (2.5초)
                 one_set = eng + short_silence + kor + short_silence + mean + long_silence
                 
-                # [수정됨] 2번 반복해서 전체 오디오에 추가
+                # 2번 반복
                 full_audio += one_set + one_set 
                 
                 # 화면 표시
